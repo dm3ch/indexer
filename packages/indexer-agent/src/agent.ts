@@ -275,6 +275,9 @@ class Agent {
             targetDeployments,
             activeAllocations,
           )
+          // Note: Deployments reconciled in the above function will not have their allocations reconciled below
+          // The activeDeployments set will be updated before the next reconciliation loop and corresponding allocations
+          // will be reconciled then.
 
           // Reconcile allocations
           await this.reconcileAllocations(
@@ -535,7 +538,7 @@ class Agent {
       })),
     })
 
-    // Calculate the union of active deployments and target deployments
+    // Calculate the union of active deployments and active Allocation deployments
     const deployments = uniqueDeployments([
       ...activeDeployments,
       ...activeAllocations.map(allocation => allocation.subgraphDeployment.id),
