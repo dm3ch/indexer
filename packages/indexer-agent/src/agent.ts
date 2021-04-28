@@ -146,7 +146,7 @@ class Agent {
     )
 
     const activeDeployments = timer(60_000).tryMap(
-      () => this.indexer.subgraphDeployments(),
+      () => this.indexer.healthySubgraphDeployments(),
       {
         onError: () =>
           this.logger.warn(
@@ -279,7 +279,7 @@ class Agent {
           // Reconcile allocations
           await this.reconcileAllocations(
             activeAllocations,
-            targetDeployments,
+            activeDeployments,
             indexingRules,
             currentEpoch.toNumber(),
             currentEpochStartBlock,
@@ -516,7 +516,7 @@ class Agent {
 
   async reconcileAllocations(
     activeAllocations: Allocation[],
-    targetDeployments: SubgraphDeploymentID[],
+    activeDeployments: SubgraphDeploymentID[],
     rules: IndexingRuleAttributes[],
     currentEpoch: number,
     currentEpochStartBlock: EthereumBlock,
@@ -537,14 +537,14 @@ class Agent {
 
     // Calculate the union of active deployments and target deployments
     const deployments = uniqueDeployments([
-      ...targetDeployments,
+      ...activeDeployments,
       ...activeAllocations.map(allocation => allocation.subgraphDeployment.id),
     ])
 
     // Ensure the network subgraph is never allocated towards
     if (this.networkSubgraph instanceof SubgraphDeploymentID) {
       const networkSubgraphDeployment = this.networkSubgraph
-      targetDeployments = targetDeployments.filter(
+      activeDeployments = activeDeployments.filter(
         deployment => deployment.bytes32 !== networkSubgraphDeployment.bytes32,
       )
     }
@@ -567,7 +567,7 @@ class Agent {
           ),
 
           // Whether the deployment is worth indexing
-          targetDeployments.find(
+          activeDeployments.find(
             target => target.bytes32 === deployment.bytes32,
           ) !== undefined,
 
