@@ -94,7 +94,7 @@ export class Indexer {
   async connect(): Promise<void> {
     try {
       this.logger.info(`Check if indexing status API is available`)
-      const currentDeployments = await this.subgraphDeployments()
+      const currentDeployments = await this.healthySubgraphDeployments()
       this.logger.info(`Successfully connected to indexing status API`, {
         currentDeployments: currentDeployments.map(
           deployment => deployment.display,
@@ -105,39 +105,6 @@ export class Indexer {
       this.logger.error(`Failed to connect to indexing status API`, {
         err,
       })
-      throw err
-    }
-  }
-
-  async subgraphDeployments(): Promise<SubgraphDeploymentID[]> {
-    try {
-      const result = await this.statuses
-        .query(
-          gql`
-            {
-              indexingStatuses {
-                subgraphDeployment: subgraph
-                node
-              }
-            }
-          `,
-        )
-        .toPromise()
-
-      if (result.error) {
-        throw result.error
-      }
-
-      return result.data.indexingStatuses
-        .filter((status: { subgraphDeployment: string; node: string }) => {
-          return status.node !== 'removed'
-        })
-        .map((status: { subgraphDeployment: string; node: string }) => {
-          return new SubgraphDeploymentID(status.subgraphDeployment)
-        })
-    } catch (error) {
-      const err = indexerError(IndexerErrorCode.IE018, error)
-      this.logger.error(`Failed to query indexing status API`, { err })
       throw err
     }
   }
